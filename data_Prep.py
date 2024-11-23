@@ -30,6 +30,7 @@ def preprocess(data):
     return data
 
 df = preprocess(data)
+print(df.head())
 
 #visualize the data
 def visualize_data(df):
@@ -57,18 +58,16 @@ def visualize_data(df):
     sns.heatmap(corr[(corr >= 0.8) | (corr <= -0.8)], annot=True, cmap='coolwarm')
     plt.show()
 
-    #print features that are correlated to more than 1 feature with a score of > 0.8
-    correlated_features = set()
-    for i in range(len(corr.columns)):
-        for j in range(i):
-            if abs(corr.iloc[i, j]) > 0.8:
-                colname = corr.columns[i]
-                correlated_features.add(colname)
+    #Boxplot of features to identify outliers
+    df.plot(kind='box', subplots=True, layout=(6, 6), figsize=(20, 20))
+    plt.suptitle('Boxplot of Features')
+    plt.show()
 
     return df 
 
 df2 = visualize_data(df)
-
+#save the preprocessed data
+df2.to_csv('preprocessed_data.csv', index=False)
 
 
 

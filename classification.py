@@ -9,67 +9,149 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import RFE
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.dummy import DummyClassifier
 
 
 
+# Load data
 data = pd.read_csv('preprocessed_data.csv')
-
 X = data.drop('diagnosis', axis=1)
 y = data['diagnosis']
 
+# Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Create a pipeline with three steps: scaling, PCA, and classification
-pipe = Pipeline([('scaler', QuantileTransformer()),  # Scale features to a uniform distribution
-                 ('pca', PCA(n_components=20)),  # Reduce dimensionality to 20 principal components
-                 ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))])  # Train a random forest classifier
-# Fit the pipeline to the training data
-pipe.fit(X_train, y_train)
+# Dictionaries to store scores
+cv_scores = {}
+f1_scores = {}
+accuracy_scores = {}
 
-# Predict the labels for the test set
-y_pred = pipe.predict(X_test)
+def plot_feature_importances(importances, title):
+    """Plot feature importances."""
+    features = [f'PC{i+1}' for i in range(len(importances))]
+    indices = np.argsort(importances)[::-1]
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(importances)), importances[indices])
+    plt.xticks(range(len(importances)), [features[i] for i in indices], rotation=90)
+    plt.xlabel('Principal Components')
+    plt.ylabel('Importance')
+    plt.title(title)
+    plt.show()
 
-# Print the classification report to evaluate the model's performance
-print(classification_report(y_test, y_pred))
+def baseline_model(X_train, X_test, y_train, y_test):
+    """Train and evaluate a baseline model."""
+    dummy = DummyClassifier(strategy="most_frequent")
+    dummy.fit(X_train, y_train)
+    y_pred = dummy.predict(X_test)
 
-# Compute the cross-validation scores of the pipeline
-scores = cross_val_score(pipe, X_train, y_train, cv=5)
-print(f'Cross-validation scores: {scores}')
-print(f'Mean cross-validation score: {np.mean(scores)}')
+    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1_scores['Baseline'] = f1
+    
+    scores = cross_val_score(dummy, X_train, y_train, cv=5)
+    mean_score = np.mean(scores)
+    cv_scores['Baseline'] = mean_score
+    print(f'Baseline cross-validation scores: {scores}')
 
-# Plot the feature importances with feature names
-importances = pipe.named_steps['classifier'].feature_importances_
-features = [f'PC{i+1}' for i in range(len(importances))]
-indices = np.argsort(importances)[::-1]
-plt.figure(figsize=(10, 6))
-plt.bar(range(len(importances)), importances[indices])
-plt.xticks(range(len(importances)), [features[i] for i in indices], rotation=90)
-plt.xlabel('Principal Components')
-plt.ylabel('Importance')
-plt.title('Feature Importances')
-plt.show()
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['Baseline'] = accuracy
 
-
-# Get the original feature names from the PCA transformation
-pca = pipe.named_steps['pca']
-most_important_features = np.abs(pca.components_).sum(axis=0).argsort()[::-1][:20]
-original_features = X.columns[most_important_features]
-
-# Match the most important features to the original feature names based on the PCA components
-important_features_indices = np.argsort(importances)[::-1][:20]
-important_original_features = [original_features[i] for i in range(len(original_features))]
-
-# Plot the most important original features
-plt.figure(figsize=(10, 6))
-plt.bar(range(len(important_original_features)), importances[important_features_indices])
-plt.xticks(range(len(important_original_features)), important_original_features, rotation=90)
-plt.xlabel('Original Features')
-plt.ylabel('Importance')
-plt.title('Most Important Original Features')
-plt.show()
+baseline_model(X_train, X_test, y_train, y_test)
 
 
+def decision_tree(X_train, X_test, y_train, y_test):
+    """Train and evaluate a decision tree model."""
+    pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', DecisionTreeClassifier(max_depth=5, random_state=42))
+    ])
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
 
+    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1_scores['Decision Tree'] = f1
+    
+    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    mean_score = np.mean(scores)
+    cv_scores['Decision Tree'] = mean_score
+    print(f'Decision tree cross-validation scores: {scores}')
+
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['Decision Tree'] = accuracy
+
+    importances = pipe.named_steps['classifier'].feature_importances_
+    plot_feature_importances(importances, 'Decision Tree Feature Importances')
+
+decision_tree(X_train, X_test, y_train, y_test)
+
+
+def logistic_regression(X_train, X_test, y_train, y_test):
+    """Train and evaluate a logistic regression model."""
+    pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', LogisticRegression(max_iter=1000, random_state=42))
+    ])
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
+
+    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1_scores['Logistic Regression'] = f1
+    
+    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    print(f'Logistic regression cross-validation scores: {scores}')
+    mean_score = np.mean(scores)
+    cv_scores['Logistic Regression'] = mean_score
+
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['Logistic Regression'] = accuracy
+
+    importances = np.abs(pipe.named_steps['classifier'].coef_[0])
+    plot_feature_importances(importances, 'Logistic Regression Feature Importances')
+
+
+logistic_regression(X_train, X_test, y_train, y_test)
+
+def random_forest(X_train, X_test, y_train, y_test):
+    """Train and evaluate a random forest model."""
+    pipe = Pipeline([
+        ('scaler', QuantileTransformer()),
+        ('pca', PCA(n_components=10)),
+        ('classifier', RandomForestClassifier(n_estimators=100, min_samples_split=10, random_state=42))
+    ])
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
+
+    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1_scores['Random Forest'] = f1
+    
+    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    print(f'Random forest cross-validation scores: {scores}')
+    mean_score = np.mean(scores)
+    cv_scores['Random Forest'] = mean_score
+
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['Random Forest'] = accuracy
+
+    importances = pipe.named_steps['classifier'].feature_importances_
+    plot_feature_importances(importances, 'Random Forest Feature Importances')
+
+random_forest(X_train, X_test, y_train, y_test)
+
+
+#print mean cross-validation scores for all models in a table with 2 columns: model and mean cross-validation score
+cv_scores_df = pd.DataFrame(list(cv_scores.items()), columns=['Model', 'Mean Cross-Validation Score'])
+print(cv_scores_df)
+
+#print mean f1 scores for all models in a table with 2 columns: model and mean f1 score
+f1_scores_df = pd.DataFrame(list(f1_scores.items()), columns=['Model', 'Mean F1 Score'])
+print(f1_scores_df)
+
+#print mean accuracy scores for all models in a table with 2 columns: model and mean accuracy score
+accuracy_scores_df = pd.DataFrame(list(accuracy_scores.items()), columns=['Model', 'Mean Accuracy Score'])
+print(accuracy_scores_df)
+
+#
 
 
 

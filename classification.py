@@ -12,6 +12,9 @@ from sklearn.feature_selection import RFE
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.dummy import DummyClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+import joblib
 
 
 
@@ -44,6 +47,11 @@ def baseline_model(X_train, X_test, y_train, y_test):
     """Train and evaluate a baseline model."""
     dummy = DummyClassifier(strategy="most_frequent")
     dummy.fit(X_train, y_train)
+
+    #save the trained model
+    joblib.dump(dummy, 'baseline_model.joblib')
+    print("Model saved as 'baseline_model.joblib'.")
+
     y_pred = dummy.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
@@ -67,6 +75,11 @@ def decision_tree(X_train, X_test, y_train, y_test):
         ('classifier', DecisionTreeClassifier(max_depth=5, random_state=42))
     ])
     pipe.fit(X_train, y_train)
+
+    #save the trained model
+    joblib.dump(pipe, 'decision_tree.joblib')
+    print("Model saved as 'decision_tree.joblib'.")
+
     y_pred = pipe.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
@@ -93,6 +106,11 @@ def logistic_regression(X_train, X_test, y_train, y_test):
         ('classifier', LogisticRegression(max_iter=1000, random_state=42))
     ])
     pipe.fit(X_train, y_train)
+
+    #save the trained model
+    joblib.dump(pipe, 'logistic_regression.joblib')
+    print("Model saved as 'logistic_regression.joblib'.")
+
     y_pred = pipe.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
@@ -109,8 +127,64 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     importances = np.abs(pipe.named_steps['classifier'].coef_[0])
     plot_feature_importances(importances, 'Logistic Regression Feature Importances')
 
-
 logistic_regression(X_train, X_test, y_train, y_test)
+
+def rfe_logistic_regression(X_train, X_test, y_train, y_test):
+    """Train and evaluate a logistic regression model with recursive feature elimination."""
+    pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('rfe', RFE(LogisticRegression(max_iter=100, random_state=42))),
+        ('classifier', LogisticRegression(max_iter=1000, random_state=42))])
+
+    pipe.fit(X_train, y_train)
+
+    #save the trained model
+    joblib.dump(pipe, 'rfe_logistic_regression.joblib')
+    print("Model saved as 'rfe_logistic_regression.joblib'.")
+
+    y_pred = pipe.predict(X_test)
+
+    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1_scores['RFE Logistic Regression'] = f1
+    
+    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    print(f'RFE logistic regression cross-validation scores: {scores}')
+    mean_score = np.mean(scores)
+    cv_scores['RFE Logistic Regression'] = mean_score
+
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['RFE Logistic Regression'] = accuracy
+
+    importances = pipe.named_steps['rfe'].ranking_ / np.max(pipe.named_steps['rfe'].ranking_)
+    plot_feature_importances(importances, 'RFE Logistic Regression Feature Importances')
+
+rfe_logistic_regression(X_train, X_test, y_train, y_test)
+
+
+def knn(X_train, X_test, y_train, y_test):
+    """Train and evaluate a k-nearest neighbors model."""
+    pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', KNeighborsClassifier(n_neighbors=10))
+    ])
+    pipe.fit(X_train, y_train)
+
+    #save the trained model
+    joblib.dump(pipe, 'knn_model.joblib')
+    print("Model saved as 'knn_model.joblib'.")
+
+    y_pred = pipe.predict(X_test)
+
+    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1_scores['KNN'] = f1
+    
+    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    print(f'KNN cross-validation scores: {scores}')
+    mean_score = np.mean(scores)
+    cv_scores['KNN'] = mean_score
+
+knn(X_train, X_test, y_train, y_test)
+
 
 def random_forest(X_train, X_test, y_train, y_test):
     """Train and evaluate a random forest model."""
@@ -120,6 +194,11 @@ def random_forest(X_train, X_test, y_train, y_test):
         ('classifier', RandomForestClassifier(n_estimators=100, min_samples_split=10, random_state=42))
     ])
     pipe.fit(X_train, y_train)
+
+    #save the trained model
+    joblib.dump(pipe, 'random_forest_model.joblib')
+    print("Model saved as 'random_forest_model.joblib'.")
+
     y_pred = pipe.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
@@ -130,28 +209,16 @@ def random_forest(X_train, X_test, y_train, y_test):
     mean_score = np.mean(scores)
     cv_scores['Random Forest'] = mean_score
 
-    accuracy = accuracy_score(y_test, y_pred)
-    accuracy_scores['Random Forest'] = accuracy
-
     importances = pipe.named_steps['classifier'].feature_importances_
     plot_feature_importances(importances, 'Random Forest Feature Importances')
 
 random_forest(X_train, X_test, y_train, y_test)
 
 
-#print mean cross-validation scores for all models in a table with 2 columns: model and mean cross-validation score
-cv_scores_df = pd.DataFrame(list(cv_scores.items()), columns=['Model', 'Mean Cross-Validation Score'])
-print(cv_scores_df)
 
-#print mean f1 scores for all models in a table with 2 columns: model and mean f1 score
-f1_scores_df = pd.DataFrame(list(f1_scores.items()), columns=['Model', 'Mean F1 Score'])
-print(f1_scores_df)
 
-#print mean accuracy scores for all models in a table with 2 columns: model and mean accuracy score
-accuracy_scores_df = pd.DataFrame(list(accuracy_scores.items()), columns=['Model', 'Mean Accuracy Score'])
-print(accuracy_scores_df)
 
-#
+
 
 
 

@@ -13,8 +13,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import GradientBoostingClassifier
 import joblib
+from sklearn.model_selection import GridSearchCV
 
 
 
@@ -69,54 +69,65 @@ baseline_model(X_train, X_test, y_train, y_test)
 
 
 def decision_tree(X_train, X_test, y_train, y_test):
-    """Train and evaluate a decision tree model."""
+    """Train and evaluate a decision tree model with grid search."""
     pipe = Pipeline([
         ('scaler', StandardScaler()),
-        ('classifier', DecisionTreeClassifier(max_depth=5, random_state=42))
-    ])
-    pipe.fit(X_train, y_train)
+        ('classifier', DecisionTreeClassifier(random_state=42))])
+    
+    param_grid = {
+        'classifier__max_depth': [3, 5, 10, None],
+        'classifier__min_samples_split': [2, 5, 10],
+        'classifier__min_samples_leaf': [1, 2, 4]}
 
-    #save the trained model
-    joblib.dump(pipe, 'decision_tree.joblib')
+    grid_search = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    # Save the trained model
+    joblib.dump(grid_search, 'decision_tree.joblib')
     print("Model saved as 'decision_tree.joblib'.")
 
-    y_pred = pipe.predict(X_test)
+    y_pred = grid_search.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
     f1_scores['Decision Tree'] = f1
     
-    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    scores = cross_val_score(grid_search.best_estimator_, X_train, y_train, cv=5)
+    print(f'Decision tree cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['Decision Tree'] = mean_score
-    print(f'Decision tree cross-validation scores: {scores}')
 
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['Decision Tree'] = accuracy
 
-    importances = pipe.named_steps['classifier'].feature_importances_
+    importances = grid_search.best_estimator_.named_steps['classifier'].feature_importances_
     plot_feature_importances(importances, 'Decision Tree Feature Importances')
-
 decision_tree(X_train, X_test, y_train, y_test)
 
 
 def logistic_regression(X_train, X_test, y_train, y_test):
-    """Train and evaluate a logistic regression model."""
+    """Train and evaluate a logistic regression model with grid search."""
     pipe = Pipeline([
         ('scaler', StandardScaler()),
-        ('classifier', LogisticRegression(max_iter=1000, random_state=42))
-    ])
-    pipe.fit(X_train, y_train)
+        ('classifier', LogisticRegression(max_iter=500, random_state=42))])
+    
+    param_grid = {
+        'classifier__C': [0.01, 0.1, 1, 10, 100],
+        'classifier__penalty': ['l1', 'l2'],
+        'classifier__solver': ['liblinear', 'lbfgs']}
 
-    #save the trained model
-    joblib.dump(pipe, 'logistic_regression.joblib')
+    grid_search = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    # Save the trained model
+    joblib.dump(grid_search, 'logistic_regression.joblib')
     print("Model saved as 'logistic_regression.joblib'.")
 
-    y_pred = pipe.predict(X_test)
+    y_pred = grid_search.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
     f1_scores['Logistic Regression'] = f1
     
-    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    scores = cross_val_score(grid_search.best_estimator_, X_train, y_train, cv=5)
     print(f'Logistic regression cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['Logistic Regression'] = mean_score
@@ -124,30 +135,36 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['Logistic Regression'] = accuracy
 
-    importances = np.abs(pipe.named_steps['classifier'].coef_[0])
+    importances = np.abs(grid_search.best_estimator_.named_steps['classifier'].coef_[0])
     plot_feature_importances(importances, 'Logistic Regression Feature Importances')
-
 logistic_regression(X_train, X_test, y_train, y_test)
 
 def rfe_logistic_regression(X_train, X_test, y_train, y_test):
-    """Train and evaluate a logistic regression model with recursive feature elimination."""
+    """Train and evaluate a logistic regression model with RFE and grid search."""
     pipe = Pipeline([
         ('scaler', StandardScaler()),
         ('rfe', RFE(LogisticRegression(max_iter=100, random_state=42))),
-        ('classifier', LogisticRegression(max_iter=1000, random_state=42))])
+        ('classifier', LogisticRegression(max_iter=500, random_state=42))])
+    
+    param_grid = {
+        'rfe__n_features_to_select': [5, 10, 15],
+        'classifier__C': [0.01, 0.1, 1, 10, 100],
+        'classifier__penalty': ['l1', 'l2'],
+        'classifier__solver': ['liblinear', 'lbfgs']}
+    
+    grid_search = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
 
-    pipe.fit(X_train, y_train)
-
-    #save the trained model
-    joblib.dump(pipe, 'rfe_logistic_regression.joblib')
+    # Save the trained model
+    joblib.dump(grid_search, 'rfe_logistic_regression.joblib')
     print("Model saved as 'rfe_logistic_regression.joblib'.")
 
-    y_pred = pipe.predict(X_test)
+    y_pred = grid_search.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
     f1_scores['RFE Logistic Regression'] = f1
     
-    scores = cross_val_score(pipe, X_train, y_train, cv=5)
+    scores = cross_val_score(grid_search.best_estimator_, X_train, y_train, cv=5)
     print(f'RFE logistic regression cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['RFE Logistic Regression'] = mean_score
@@ -155,9 +172,8 @@ def rfe_logistic_regression(X_train, X_test, y_train, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['RFE Logistic Regression'] = accuracy
 
-    importances = pipe.named_steps['rfe'].ranking_ / np.max(pipe.named_steps['rfe'].ranking_)
+    importances = grid_search.best_estimator_.named_steps['rfe'].ranking_ / np.max(grid_search.best_estimator_.named_steps['rfe'].ranking_)
     plot_feature_importances(importances, 'RFE Logistic Regression Feature Importances')
-
 rfe_logistic_regression(X_train, X_test, y_train, y_test)
 
 
@@ -165,15 +181,21 @@ def knn(X_train, X_test, y_train, y_test):
     """Train and evaluate a k-nearest neighbors model."""
     pipe = Pipeline([
         ('scaler', StandardScaler()),
-        ('classifier', KNeighborsClassifier(n_neighbors=10))
-    ])
-    pipe.fit(X_train, y_train)
+        ('classifier', KNeighborsClassifier())])
+
+    param_grid = {
+        'classifier__n_neighbors': [3, 5, 10, 20],
+        'classifier__weights': ['uniform', 'distance'],
+        'classifier__metric': ['euclidean', 'manhattan', 'minkowski']}
+    
+    grid_search = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
 
     #save the trained model
-    joblib.dump(pipe, 'knn_model.joblib')
+    joblib.dump(grid_search, 'knn_model.joblib')
     print("Model saved as 'knn_model.joblib'.")
 
-    y_pred = pipe.predict(X_test)
+    y_pred = grid_search.predict(X_test)
 
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
     f1_scores['KNN'] = f1
@@ -186,33 +208,43 @@ def knn(X_train, X_test, y_train, y_test):
 knn(X_train, X_test, y_train, y_test)
 
 
-def random_forest(X_train, X_test, y_train, y_test):
-    """Train and evaluate a random forest model."""
+def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
+    """Train and evaluate a random forest model with Grid Search."""
     pipe = Pipeline([
         ('scaler', QuantileTransformer()),
         ('pca', PCA(n_components=10)),
-        ('classifier', RandomForestClassifier(n_estimators=100, min_samples_split=10, random_state=42))
-    ])
-    pipe.fit(X_train, y_train)
+        ('classifier', RandomForestClassifier(random_state=42))])
 
-    #save the trained model
-    joblib.dump(pipe, 'random_forest_model.joblib')
+    # Define hyperparameter grid
+    param_grid = {
+        'classifier__n_estimators': [100, 200, 500],
+        'classifier__min_samples_split': [2, 5, 10],
+        'classifier__max_features': ['sqrt', 'log2', None],}
+
+    grid_search = GridSearchCV(pipe, param_grid, cv=5, scoring='f1_weighted', verbose=1, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    # Save the best model
+    best_model = grid_search.best_estimator_
+    joblib.dump(best_model, 'random_forest_model.joblib')
     print("Model saved as 'random_forest_model.joblib'.")
 
-    y_pred = pipe.predict(X_test)
+    print(f"Best Parameters: {grid_search.best_params_}")
 
+    # Evaluate the best model
+    y_pred = best_model.predict(X_test)
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
-    f1_scores['Random Forest'] = f1
-    
-    scores = cross_val_score(pipe, X_train, y_train, cv=5)
-    print(f'Random forest cross-validation scores: {scores}')
-    mean_score = np.mean(scores)
-    cv_scores['Random Forest'] = mean_score
+    print(f"Random Forest F1 Score (with Grid Search): {f1}")
 
-    importances = pipe.named_steps['classifier'].feature_importances_
-    plot_feature_importances(importances, 'Random Forest Feature Importances')
+    scores = cross_val_score(best_model, X_train, y_train, cv=5)
+    print(f'Random Forest Cross-Validation Scores (with Grid Search): {scores}')
+    print(f'Mean Cross-Validation Score: {np.mean(scores)}')
 
-random_forest(X_train, X_test, y_train, y_test)
+    # Feature Importance
+    importances = best_model.named_steps['classifier'].feature_importances_
+    plot_feature_importances(importances, 'Random Forest Feature Importances (with Grid Search)')
+
+random_forest_with_grid_search(X_train, X_test, y_train, y_test)
 
 
 

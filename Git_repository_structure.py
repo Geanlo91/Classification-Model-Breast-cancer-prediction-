@@ -29,12 +29,12 @@ def create_project_structure(base_path = 'Classification project'):
                   readme_file.write("```\n")
                   readme_file.write(f"{base_path}/\n")
                   for folder in structure:
-                              readme_file.write(f"├── {folder}/\n")
-                  readme_file.write("└── README.md\n")
+                              readme_file.write(f"{folder}/\n")
+                  readme_file.write("README.md\n")
                   readme_file.write("```\n")
                   readme_file.write("\nInstructions for the project can be added here.")
           print(f"Created file: {readme_path}")
 
 
-if __name__ == "__main__":
-    create_project_structure()
+if __name__=='__main__':
+        create_project_structure

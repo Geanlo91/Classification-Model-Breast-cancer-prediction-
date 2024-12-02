@@ -5,9 +5,7 @@ def create_project_structure(base_path = 'Classification project'):
           structure = [
                   'data',
                   'src',
-                  'reports',
-                  'requirements.txt',
-                  'README.md']
+                  'reports']
           
           if not os.path.exists(base_path):
                   os.makedirs(base_path)
@@ -38,3 +36,5 @@ def create_project_structure(base_path = 'Classification project'):
 
 if __name__=='__main__':
         create_project_structure
+
+

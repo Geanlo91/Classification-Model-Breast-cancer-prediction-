@@ -304,7 +304,7 @@ for model_name, model in models.items():
 def save_lime_explanations(model, X_train, X_test, y_test, model_name, filepath):
     # Ensure the directory exists
     if not os.path.exists(filepath):
-        os.makedirs(filepath) 
+        os.makedirs(filepath)  
     
     explainer = lime.lime_tabular.LimeTabularExplainer(
         training_data=np.array(X_train),

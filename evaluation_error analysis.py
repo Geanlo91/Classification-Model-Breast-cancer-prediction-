@@ -26,10 +26,8 @@ def compute_confusion_matrix(model, X_test, y_test):
     y_pred = model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred)
     return cm
-
 #Generate confusion matrices for all models
 confusion_matrices = {model_name: compute_confusion_matrix(model, X_test, y_test) for model_name, model in models.items()}
-
 #Plot confusion matrix for all models
 fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(10, 15))
 for ax, (model_name, cm) in zip(axes.flatten(), confusion_matrices.items()):
@@ -45,7 +43,6 @@ def compute_classification_report(model, X_test, y_test):
     y_pred = model.predict(X_test)
     cr = classification_report(y_test, y_pred)
     return cr
-
 #Generate classification reports for all models
 classification_reports = {model_name: compute_classification_report(model, X_test, y_test) for model_name, model in models.items()}
 #Print classification reports for all models
@@ -86,6 +83,8 @@ plt.show()
 
 #identify the column name and data points with the misclassified samples
 for model_name, model in models.items():
+    if model == models['Baseline']:
+        continue 
     y_pred = model.predict(X_test)
     errors = X_test[y_test != y_pred]
     print(f'Misclassified samples for {model_name}:')
@@ -144,20 +143,14 @@ for model_name, model in models.items():
 
 misclassified = pd.concat(misclassified)
 correctly_classified = pd.concat(correctly_classified)
-
 misclassified_summary = misclassified.describe().T
 correctly_classified_summary = correctly_classified.describe().T
-
 #save the summary statistics in a dataframe
 misclassified_df = pd.DataFrame(misclassified_summary)
 correctly_classified_df = pd.DataFrame(correctly_classified_summary)
-
 # Align on shared statistics
 misclassified_mean = misclassified_df['mean']
 correctly_classified_mean = correctly_classified_df['mean']
-
-#save the means of misclassified and correctly classified samples in a dataframe
-
 
 # Compute and display the differences
 mean_diff = misclassified_mean - correctly_classified_mean
@@ -175,23 +168,6 @@ plt.title('Mean Comparison of Misclassified and Correctly Classified Samples')
 plt.xticks(rotation=90)
 plt.legend()
 plt.show()
-
-
-# Error Analysis for False Positives and False Negatives
-def error_analysis(y_true, y_pred):
-    cm = confusion_matrix(y_true, y_pred)
-    
-    false_positives = cm[0, 1]  # Predicted positive but actually negative
-    false_negatives = cm[1, 0]  # Predicted negative but actually positive
-    
-    print(f"False Positives: {false_positives}")
-    print(f"False Negatives: {false_negatives}")
-    
-    fp_indices = np.where((y_pred == 1) & (y_true == 0))[0]
-    fn_indices = np.where((y_pred == 0) & (y_true == 1))[0]
-    
-    print(f"Indices of False Positives: {fp_indices}")
-    print(f"Indices of False Negatives: {fn_indices}")
 
 
 # LIME Explanation for a specific prediction
@@ -212,16 +188,6 @@ for model_name, model in models.items():
     print(f'LIME Explanation for {model_name}:')
     lime_explanation(model, X_train, X_test, 20)
     print('\n')
-
-
-# Error analysis for all models
-for model_name, model in models.items():
-    if model == models['Baseline']:
-        continue  # Skip the baseline model
-    print(f'Error Analysis for {model_name}:')
-    error_analysis(y_test, model.predict(X_test))
-    print('\n')
-
 
 # Function for LIME Explanation for a range of misclassified samples
 def lime_explanation_for_errors(model, X_train, X_test, y_test, model_name):
@@ -257,8 +223,7 @@ def lime_explanation_for_fp_fn(model, X_train, X_test, y_test, model_name):
         mode='classification',
         class_names=['Negative', 'Positive'],
         feature_names=X_train.columns,
-        discretize_continuous=True
-    )
+        discretize_continuous=True)
     
     # Identify false positives and false negatives
     y_pred = model.predict(X_test)
@@ -278,7 +243,6 @@ def lime_explanation_for_fp_fn(model, X_train, X_test, y_test, model_name):
         print(f'LIME Explanation for False Negative sample {i} using {model_name}:')
         exp.show_in_notebook(show_table=True)  # Shows the LIME explanation for the false negative instance
         print("\n")
-    
     return fp_indices, fn_indices
 
 
@@ -300,18 +264,14 @@ def save_lime_explanations(model, X_train, X_test, y_test, model_name, filepath)
     # Ensure the directory exists
     if not os.path.exists(filepath):
         os.makedirs(filepath)  
-    
     explainer = lime.lime_tabular.LimeTabularExplainer(
         training_data=np.array(X_train),
         mode='classification',
         class_names=['Negative', 'Positive'],
         feature_names=X_train.columns,
-        discretize_continuous=True
-    )
-    
+        discretize_continuous=True)
     y_pred = model.predict(X_test)
     misclassified_indices = np.where(y_pred != y_test)[0]
-    
     explanations = {}
     for i in misclassified_indices:
         exp = explainer.explain_instance(X_test.iloc[i], model.predict_proba)
@@ -324,7 +284,6 @@ def save_lime_explanations(model, X_train, X_test, y_test, model_name, filepath)
             print(f'Saved explanation for sample {i} to {file_path}')
         except Exception as e:
             print(f"Error saving explanation for sample {i}: {e}")
-    
     return explanations
 
 # Example: Save explanations for the 'Random Forest' model

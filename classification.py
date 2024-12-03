@@ -59,7 +59,6 @@ def baseline_model(X_train, X_test, y_train, y_test):
     scores = cross_val_score(dummy, X_train, y_train, cv=5)
     mean_score = np.mean(scores)
     cv_scores['Baseline'] = mean_score
-    print(f'Baseline cross-validation scores: {scores}')
 
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['Baseline'] = accuracy
@@ -91,7 +90,6 @@ def decision_tree(X_train, X_test, y_train, y_test):
     f1_scores['Decision Tree'] = f1
     
     scores = cross_val_score(grid_search.best_estimator_, X_train, y_train, cv=5)
-    print(f'Decision tree cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['Decision Tree'] = mean_score
 
@@ -127,7 +125,6 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     f1_scores['Logistic Regression'] = f1
     
     scores = cross_val_score(grid_search.best_estimator_, X_train, y_train, cv=5)
-    print(f'Logistic regression cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['Logistic Regression'] = mean_score
 
@@ -164,7 +161,6 @@ def rfe_logistic_regression(X_train, X_test, y_train, y_test):
     f1_scores['RFE Logistic Regression'] = f1
     
     scores = cross_val_score(grid_search.best_estimator_, X_train, y_train, cv=5)
-    print(f'RFE logistic regression cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['RFE Logistic Regression'] = mean_score
 
@@ -200,7 +196,6 @@ def knn(X_train, X_test, y_train, y_test):
     f1_scores['KNN'] = f1
     
     scores = cross_val_score(pipe, X_train, y_train, cv=5)
-    print(f'KNN cross-validation scores: {scores}')
     mean_score = np.mean(scores)
     cv_scores['KNN'] = mean_score
 
@@ -233,27 +228,15 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     # Evaluate the best model
     y_pred = best_model.predict(X_test)
     f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
-    print(f"Random Forest F1 Score (with Grid Search): {f1}")
+    f1_scores['Random Forest'] = f1
 
     scores = cross_val_score(best_model, X_train, y_train, cv=5)
-    print(f'Random Forest Cross-Validation Scores (with Grid Search): {scores}')
-    print(f'Mean Cross-Validation Score: {np.mean(scores)}')
+    mean_score= np.mean(scores)
+    cv_scores['Random Forest'] = mean_score
 
     # Feature Importance
     importances = best_model.named_steps['classifier'].feature_importances_
     plot_feature_importances(importances, 'Random Forest Feature Importances (with Grid Search)')
 
 random_forest_with_grid_search(X_train, X_test, y_train, y_test)
-
-
-
-
-
-
-
-
-
-
-
-
 

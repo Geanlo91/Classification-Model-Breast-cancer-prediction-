@@ -17,9 +17,8 @@ import joblib
 from sklearn.model_selection import GridSearchCV
 
 
-
 # Load data
-data = pd.read_csv('preprocessed_data.csv')
+data = pd.read_csv('preprocessed_data.csv') 
 X = data.drop('diagnosis', axis=1)
 y = data['diagnosis']
 

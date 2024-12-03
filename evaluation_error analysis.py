@@ -1,12 +1,10 @@
-from classification import X_test, y_test, X_train, y_train, f1_scores, cv_scores, accuracy_scores
+from classification import X_test, y_test, X_train, f1_scores, cv_scores, accuracy_scores
 import joblib
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from sklearn.metrics import classification_report
 import pandas as pd
-import seaborn as sns
 import numpy as np
-from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import lime
@@ -20,8 +18,7 @@ models = {
     'Logistic Regression': joblib.load('logistic_regression.joblib'),
     'RFE Logistic Regression': joblib.load('rfe_logistic_regression.joblib'),
     'Random Forest': joblib.load('random_forest_model.joblib'),
-    'KNN': joblib.load('knn_model.joblib')
-}
+    'KNN': joblib.load('knn_model.joblib')}
 
 
 #Confusion matrix for each model
@@ -39,10 +36,8 @@ for ax, (model_name, cm) in zip(axes.flatten(), confusion_matrices.items()):
           disp = ConfusionMatrixDisplay(confusion_matrix=cm)
           disp.plot(ax=ax, cmap='viridis')
           ax.set_title(f'{model_name} Confusion Matrix')
-
 plt.tight_layout()
 plt.show()
-
 
 
 #Function for classification report of each model
@@ -85,9 +80,9 @@ for ax, (model_name, model) in zip(scatter_axes.flatten(), models.items()):
             ax.set_xlabel('Features')
             ax.set_ylabel('True Labels')
             ax.legend(['Misclassified'])
-
 plt.tight_layout()
 plt.show()
+
 
 #identify the column name and data points with the misclassified samples
 for model_name, model in models.items():

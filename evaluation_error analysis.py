@@ -61,6 +61,19 @@ print(cv_scores_df)
 print(f1_scores_df)
 print(accuracy_scores_df)
 
+#Plotting line graphs in a figure to compare the models based on mean cross-validation scores, mean f1 scores and mean accuracy scores
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(15, 10))
+cv_scores_df.plot(kind='line', x='Model', y='Mean Cross-Validation Score', ax=axes[0], color='skyblue', legend=False)
+f1_scores_df.plot(kind='line', x='Model', y='Mean F1 Score', ax=axes[1], color='lightcoral', legend=False)
+accuracy_scores_df.plot(kind='line', x='Model', y='Mean Accuracy Score', ax=axes[2], color='lightgreen', legend=False)
+axes[0].set_title('Mean Cross-Validation Scores')
+axes[1].set_title('Mean F1 Scores')
+axes[2].set_title('Mean Accuracy Scores')
+for ax in axes:
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+plt.tight_layout()
+plt.show()
+
 
 """Investigating specific features where errors are frequently made"""
 # Scatter plots to visualize the distribution of the features for the misclassified samples for all models.
@@ -210,7 +223,6 @@ def lime_explanation_for_errors(model, X_train, X_test, y_test, model_name):
         explanations[i] = exp
         print(f'LIME Explanation for misclassified sample {i} using {model_name}:')
         exp.show_in_notebook()  # This shows the LIME explanation for each misclassified instance
-        print("\n")
     return explanations
 
 
@@ -235,14 +247,12 @@ def lime_explanation_for_fp_fn(model, X_train, X_test, y_test, model_name):
         exp = explainer.explain_instance(X_test.iloc[i], model.predict_proba)
         print(f'LIME Explanation for False Positive sample {i} using {model_name}:')
         exp.show_in_notebook(show_table=True)  # Shows the LIME explanation for the false positive instance
-        print("\n")
-    
+        
     # Apply LIME to false negatives
     for i in fn_indices:
         exp = explainer.explain_instance(X_test.iloc[i], model.predict_proba)
         print(f'LIME Explanation for False Negative sample {i} using {model_name}:')
         exp.show_in_notebook(show_table=True)  # Shows the LIME explanation for the false negative instance
-        print("\n")
     return fp_indices, fn_indices
 
 

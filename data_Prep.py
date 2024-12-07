@@ -10,19 +10,38 @@ from sklearn.preprocessing import LabelEncoder
 
 data = pd.read_csv('Data for Task 1.csv')
 
+#Data Exploration
+print('Data head:\n', data.head())
+print('Data info:\n', data.info())
+print('Data shape:\n', data.shape)
+print('Data description:\n', data.describe())
+#print count of the diagnosis column
+print('Diagnosis count:\n', data['diagnosis'].value_counts())
+
 # Define preprocessing for numeric and categorical columns
 def preprocess(data):
     # Drop 'id' column
-    data = data.drop(['id', 'Unnamed: 32'], axis=1)
+    data = data.drop('id', axis=1)
+
+    #drop columns with all missing or nan values
+    data.dropna(axis=1, how='all', inplace=True)
     
-    # Encode 'diagnosis' column to binary
-    le = LabelEncoder()
-    data['diagnosis'] = le.fit_transform(data['diagnosis'])
+    # Encode 'diagnosis' column
+    try:
+        # Create an instance of LabelEncoder
+        le = LabelEncoder()
+        # Fit and transform the 'diagnosis' column
+        data['diagnosis'] = le.fit_transform(data['diagnosis'])
+        # If successful, print success message and assigned values per class
+        print("Label encoding was successful.")
+        class_mapping = {index: label for index, label in enumerate(le.classes_)}
+        print("Assigned values per class:", class_mapping)
+    except Exception as e:
+        # If an error occurs, print an error message
+        print("An error occurred during label encoding:", str(e))
     
     return data
-
 df = preprocess(data)
-print(df.head())
 
 #visualize the data
 def visualize_data(df):
@@ -31,6 +50,11 @@ def visualize_data(df):
     plt.xlabel('Diagnosis')
     plt.ylabel('Count')
     plt.title('Diagnosis Distribution')
+    # Set x-ticks labels to 0 = Benign and 1 = Malignant
+    plt.xticks(ticks=[0, 1], labels=['Benign', 'Malignant'])
+    for i in range(2):
+        count = df['diagnosis'].value_counts().values[i]
+        plt.text(i, count, str(count), ha='center', va='bottom')
     plt.show()
 
     # Plot distribution of features
@@ -55,11 +79,16 @@ def visualize_data(df):
     plt.suptitle('Boxplot of Features')
     plt.show()
 
-    return df 
+    return df
 
-df2 = visualize_data(df)
+clean_data = visualize_data(df)
+
+
 #save the preprocessed data
-df2.to_csv('preprocessed_data.csv', index=False)
+print(clean_data.head())
+clean_data.to_csv('preprocessed_data.csv', index=False)
+
+
 
 
 

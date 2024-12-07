@@ -30,16 +30,16 @@ cv_scores = {}
 f1_scores = {}
 accuracy_scores = {}
 
-def plot_feature_importances(importances, title):
+def plot_feature_importances(importances, title, feature_names=None):
     """Plot feature importances."""
-    features = [f'PC{i+1}' for i in range(len(importances))]
+    if feature_names is None:
+        feature_names = [f'PC{i+1}' for i in range(len(importances))]
     indices = np.argsort(importances)[::-1]
     plt.figure(figsize=(10, 6))
-    plt.bar(range(len(importances)), importances[indices])
-    plt.xticks(range(len(importances)), [features[i] for i in indices], rotation=90)
-    plt.xlabel('Principal Components')
-    plt.ylabel('Importance')
     plt.title(title)
+    plt.bar(range(len(importances)), importances[indices], align='center')
+    plt.xticks(range(len(importances)), np.array(feature_names)[indices], rotation=90)
+    plt.xlabel('Feature Importance')
     plt.show()
 
 def baseline_model(X_train, X_test, y_train, y_test):
@@ -96,8 +96,13 @@ def decision_tree(X_train, X_test, y_train, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['Decision Tree'] = accuracy
 
+    #Feature importance
     importances = grid_search.best_estimator_.named_steps['classifier'].feature_importances_
-    plot_feature_importances(importances, 'Decision Tree Feature Importances')
+
+    # Mapping feature importances to original feature names
+    feature_names = X_train.columns
+    plot_feature_importances(importances, 'Decision Tree Feature Importances', feature_names)
+    
 decision_tree(X_train, X_test, y_train, y_test)
 
 
@@ -131,9 +136,15 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['Logistic Regression'] = accuracy
 
+    #Feature importance
     importances = np.abs(grid_search.best_estimator_.named_steps['classifier'].coef_[0])
-    plot_feature_importances(importances, 'Logistic Regression Feature Importances')
+
+    # Mapping feature importances to original feature names
+    feature_names = X_train.columns
+    plot_feature_importances(importances, 'Logistic Regression Feature Importances', feature_names)
+
 logistic_regression(X_train, X_test, y_train, y_test)
+
 
 def rfe_logistic_regression(X_train, X_test, y_train, y_test):
     """Train and evaluate a logistic regression model with RFE and grid search."""
@@ -167,8 +178,14 @@ def rfe_logistic_regression(X_train, X_test, y_train, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     accuracy_scores['RFE Logistic Regression'] = accuracy
 
-    importances = grid_search.best_estimator_.named_steps['rfe'].ranking_ / np.max(grid_search.best_estimator_.named_steps['rfe'].ranking_)
-    plot_feature_importances(importances, 'RFE Logistic Regression Feature Importances')
+    #Feature importance
+    importances = np.abs(grid_search.best_estimator_.named_steps['classifier'].coef_[0])
+
+    # Mapping feature importances to original feature names
+    rfe = grid_search.best_estimator_.named_steps['rfe']
+    feature_names = X_train.columns[rfe.support_]
+    plot_feature_importances(importances, 'RFE Logistic Regression Feature Importances', feature_names)
+
 rfe_logistic_regression(X_train, X_test, y_train, y_test)
 
 
@@ -206,7 +223,7 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     """Train and evaluate a random forest model with Grid Search."""
     pipe = Pipeline([
         ('scaler', QuantileTransformer()),
-        ('pca', PCA(n_components=10)),
+        ('pca', PCA(n_components=30)),
         ('classifier', RandomForestClassifier(random_state=42))])
 
     # Define hyperparameter grid
@@ -222,7 +239,6 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     best_model = grid_search.best_estimator_
     joblib.dump(best_model, 'random_forest_model.joblib')
     print("Model saved as 'random_forest_model.joblib'.")
-
     print(f"Best Parameters: {grid_search.best_params_}")
 
     # Evaluate the best model
@@ -234,9 +250,16 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     mean_score= np.mean(scores)
     cv_scores['Random Forest'] = mean_score
 
-    # Feature Importance
+    #Feature importance
     importances = best_model.named_steps['classifier'].feature_importances_
-    plot_feature_importances(importances, 'Random Forest Feature Importances (with Grid Search)')
+    pca = best_model.named_steps['pca']
+
+    # Mapping feature importances to original feature names
+    original_feature_names = np.abs(best_model.named_steps['pca'].components_)[0]
+    feature_names = X_train.columns if hasattr(X_train, 'columns') else [f'Feature{i+1}' for i in range(X_train.shape[1])]
+   
+   #Plot feature importance for original features
+    plot_feature_importances(importances, 'Random Forest Feature Importances', feature_names)
 
 random_forest_with_grid_search(X_train, X_test, y_train, y_test)
 

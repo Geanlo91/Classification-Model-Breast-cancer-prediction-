@@ -63,9 +63,9 @@ print(accuracy_scores_df)
 
 #Plotting line graphs in a figure to compare the models based on mean cross-validation scores, mean f1 scores and mean accuracy scores
 fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(15, 10))
-cv_scores_df.plot(kind='line', x='Model', y='Mean Cross-Validation Score', ax=axes[0], color='skyblue', legend=False)
-f1_scores_df.plot(kind='line', x='Model', y='Mean F1 Score', ax=axes[1], color='lightcoral', legend=False)
-accuracy_scores_df.plot(kind='line', x='Model', y='Mean Accuracy Score', ax=axes[2], color='lightgreen', legend=False)
+cv_scores_df.plot(kind='line', x='Model', y='Mean Cross-Validation Score', ax=axes[0], color='blue', legend=False)
+f1_scores_df.plot(kind='line', x='Model', y='Mean F1 Score', ax=axes[1], color='red', legend=False)
+accuracy_scores_df.plot(kind='line', x='Model', y='Mean Accuracy Score', ax=axes[2], color='green', legend=False)
 axes[0].set_title('Mean Cross-Validation Scores')
 axes[1].set_title('Mean F1 Scores')
 axes[2].set_title('Mean Accuracy Scores')

@@ -39,12 +39,12 @@ def plot_feature_importances(importances, title, feature_names=None):
     plt.title(title)
     plt.bar(range(len(importances)), importances[indices], align='center')
     plt.xticks(range(len(importances)), np.array(feature_names)[indices], rotation=90)
-    plt.xlabel('Feature Importance')
+    plt.xlabel('Features')
     plt.show()
 
 def baseline_model(X_train, X_test, y_train, y_test):
     """Train and evaluate a baseline model."""
-    dummy = DummyClassifier(strategy="most_frequent")
+    dummy = DummyClassifier(strategy="uniform", random_state=42)
     dummy.fit(X_train, y_train)
 
     #save the trained model
@@ -53,7 +53,7 @@ def baseline_model(X_train, X_test, y_train, y_test):
 
     y_pred = dummy.predict(X_test)
 
-    f1 = classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
+    f1 = f1_score(y_test, y_pred, average='weighted')
     f1_scores['Baseline'] = f1
     
     scores = cross_val_score(dummy, X_train, y_train, cv=5)
@@ -147,7 +147,7 @@ logistic_regression(X_train, X_test, y_train, y_test)
 
 
 def rfe_logistic_regression(X_train, X_test, y_train, y_test):
-    """Train and evaluate a logistic regression model with RFE and grid search."""
+    #Train and evaluate a logistic regression model with RFE and grid search.
     pipe = Pipeline([
         ('scaler', StandardScaler()),
         ('rfe', RFE(LogisticRegression(max_iter=100, random_state=42))),
@@ -216,6 +216,9 @@ def knn(X_train, X_test, y_train, y_test):
     mean_score = np.mean(scores)
     cv_scores['KNN'] = mean_score
 
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['KNN'] = accuracy
+
 knn(X_train, X_test, y_train, y_test)
 
 
@@ -223,7 +226,7 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     """Train and evaluate a random forest model with Grid Search."""
     pipe = Pipeline([
         ('scaler', QuantileTransformer()),
-        ('pca', PCA(n_components=30)),
+        ('pca', PCA(n_components=18)),
         ('classifier', RandomForestClassifier(random_state=42))])
 
     # Define hyperparameter grid
@@ -232,7 +235,7 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
         'classifier__min_samples_split': [2, 5, 10],
         'classifier__max_features': ['sqrt', 'log2', None],}
 
-    grid_search = GridSearchCV(pipe, param_grid, cv=5, scoring='f1_weighted', verbose=1, n_jobs=-1)
+    grid_search = GridSearchCV(pipe, param_grid, cv=5, verbose=1, n_jobs=-1)
     grid_search.fit(X_train, y_train)
 
     # Save the best model
@@ -250,12 +253,11 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     mean_score= np.mean(scores)
     cv_scores['Random Forest'] = mean_score
 
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores['Random Forest'] = accuracy
+
     #Feature importance
     importances = best_model.named_steps['classifier'].feature_importances_
-    pca = best_model.named_steps['pca']
-
-    # Mapping feature importances to original feature names
-    original_feature_names = np.abs(best_model.named_steps['pca'].components_)[0]
     feature_names = X_train.columns if hasattr(X_train, 'columns') else [f'Feature{i+1}' for i in range(X_train.shape[1])]
    
    #Plot feature importance for original features

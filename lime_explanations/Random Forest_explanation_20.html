@@ -37089,25 +37089,25 @@
 /***/ })
 /******/ ]);
 //# sourceMappingURL=bundle.js.map </script></head><body>
-        <div class="lime top_div" id="top_divG8HUP4NHU4VA4PL"></div>
+        <div class="lime top_div" id="top_divNBMEQ10EDQHQXT0"></div>
         
         <script>
-        var top_div = d3.select('#top_divG8HUP4NHU4VA4PL').classed('lime top_div', true);
+        var top_div = d3.select('#top_divNBMEQ10EDQHQXT0').classed('lime top_div', true);
         
             var pp_div = top_div.append('div')
                                 .classed('lime predict_proba', true);
             var pp_svg = pp_div.append('svg').style('width', '100%');
-            var pp = new lime.PredictProba(pp_svg, ["Negative", "Positive"], [0.85, 0.15]);
+            var pp = new lime.PredictProba(pp_svg, ["Negative", "Positive"], [0.7863095238095239, 0.21369047619047618]);
             
         
         var exp_div;
             var exp = new lime.Explanation(["Negative", "Positive"]);
         
                 exp_div = top_div.append('div').classed('lime explanation', true);
-                exp.show([["texture_worst <= 21.05", -0.0257295234304012], ["texture_mean <= 16.17", -0.02401006121690838], ["smoothness_se <= 0.01", -0.017396212804919427], ["compactness_worst > 0.34", 0.01611517143130359], ["18.17 < area_se <= 24.72", -0.013304026224843132], ["14.97 < radius_worst <= 18.41", 0.011283523914436133], ["symmetry_se <= 0.02", 0.009475613040842469], ["0.25 < symmetry_worst <= 0.28", -0.007980542415248674], ["0.02 < compactness_se <= 0.03", -0.007949214406796112], ["686.60 < area_worst <= 1031.50", 0.007252497947838748]], 1, exp_div);
+                exp.show([["texture_worst <= 21.05", -0.06316825766137067], ["texture_mean <= 16.17", -0.038356660774251004], ["symmetry_se <= 0.02", 0.03149608245756342], ["smoothness_se <= 0.01", -0.029081091603496555], ["fractal_dimension_worst > 0.09", 0.0205340106335401], ["0.25 < symmetry_worst <= 0.28", -0.01951914912822505], ["18.17 < area_se <= 24.72", -0.019235913025219983], ["compactness_worst > 0.34", 0.01754066634627902], ["85.98 < perimeter_mean <= 103.75", 0.017146283869936284], ["14.97 < radius_worst <= 18.41", 0.016297291746606133]], 1, exp_div);
                 
         var raw_div = top_div.append('div');
-            exp.show_raw_tabular([["texture_worst", "20.86", -0.0257295234304012], ["texture_mean", "15.79", -0.02401006121690838], ["smoothness_se", "0.00", -0.017396212804919427], ["compactness_worst", "0.35", 0.01611517143130359], ["area_se", "23.35", -0.013304026224843132], ["radius_worst", "16.57", 0.011283523914436133], ["symmetry_se", "0.01", 0.009475613040842469], ["symmetry_worst", "0.26", -0.007980542415248674], ["compactness_se", "0.02", -0.007949214406796112], ["area_worst", "812.40", 0.007252497947838748]], 1, raw_div);
+            exp.show_raw_tabular([["texture_worst", "20.86", -0.06316825766137067], ["texture_mean", "15.79", -0.038356660774251004], ["symmetry_se", "0.01", 0.03149608245756342], ["smoothness_se", "0.00", -0.029081091603496555], ["fractal_dimension_worst", "0.10", 0.0205340106335401], ["symmetry_worst", "0.26", -0.01951914912822505], ["area_se", "23.35", -0.019235913025219983], ["compactness_worst", "0.35", 0.01754066634627902], ["perimeter_mean", "90.43", 0.017146283869936284], ["radius_worst", "16.57", 0.016297291746606133]], 1, raw_div);
         
         </script>
         </body></html>

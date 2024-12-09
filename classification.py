@@ -257,11 +257,14 @@ def random_forest_with_grid_search(X_train, X_test, y_train, y_test):
     accuracy_scores['Random Forest'] = accuracy
 
     #Feature importance
-    importances = best_model.named_steps['classifier'].feature_importances_
-    feature_names = X_train.columns if hasattr(X_train, 'columns') else [f'Feature{i+1}' for i in range(X_train.shape[1])]
+    classifier = best_model.named_steps['classifier']
+    if hasattr(classifier, 'feature_importances_'):
+        importances = classifier.feature_importances_
+        feature_names = [f'PC{i+1}' for i in range(importances.shape[0])]
+        plot_feature_importances(importances, 'Random Forest Feature Importances (PCA)', feature_names)
+    else:
+        print("Feature importances not available for the selected model.")
    
-   #Plot feature importance for original features
-    plot_feature_importances(importances, 'Random Forest Feature Importances', feature_names)
-
+  
 random_forest_with_grid_search(X_train, X_test, y_train, y_test)
 

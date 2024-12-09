@@ -71,6 +71,7 @@ axes[1].set_title('Mean F1 Scores')
 axes[2].set_title('Mean Accuracy Scores')
 for ax in axes:
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+fig.suptitle('Statistical metric comparison of all models')
 plt.tight_layout()
 plt.show()
 
@@ -118,49 +119,28 @@ print(common_errors)
 print('\n')
 
 
-#PCA for visualization of misclassified samples
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_test)
-
-misclassified_indices = np.zeros_like(y_test, dtype=bool)
-for model in models.values():
-    misclassified_indices |= (y_test != model.predict(X_test))
-true_labels = y_test[misclassified_indices]
-
-misclassified_rows = X_test[misclassified_indices]
-misclassified_rows['True Label'] = true_labels
-
-plt.figure(figsize=(10, 6))
-plt.scatter(X_pca[~misclassified_indices, 0], X_pca[~misclassified_indices, 1], 
-            c=y_test[~misclassified_indices], cmap='coolwarm', alpha=0.6, label='Correctly Classified')
-plt.scatter(X_pca[misclassified_indices, 0], X_pca[misclassified_indices, 1], c=true_labels, cmap='autumn', 
-            edgecolor='k', s=100, label='Misclassified')
-plt.legend()
-plt.title('PCA Visualization of Misclassifications')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.show()
-
-
 """Evaluating model interpretability for misclassified samples, Comparing the means
 of misclassified and correctly classified samples for each model"""
 
 # Identify misclassified and correctly classified rows for each model
+# Focus only on the Logistic Regression model
 misclassified = []
 correctly_classified = []
 
-for model_name, model in models.items():
-    y_pred = model.predict(X_test)
-    misclassified.append(X_test[y_test != y_pred])
-    correctly_classified.append(X_test[y_test == y_pred])
+model = models['Logistic Regression']
+y_pred = model.predict(X_test)
+misclassified.append(X_test[y_test != y_pred])
+correctly_classified.append(X_test[y_test == y_pred])
 
 misclassified = pd.concat(misclassified)
 correctly_classified = pd.concat(correctly_classified)
 misclassified_summary = misclassified.describe().T
 correctly_classified_summary = correctly_classified.describe().T
-#save the summary statistics in a dataframe
+
+# Save the summary statistics in a dataframe
 misclassified_df = pd.DataFrame(misclassified_summary)
 correctly_classified_df = pd.DataFrame(correctly_classified_summary)
+
 # Align on shared statistics
 misclassified_mean = misclassified_df['mean']
 correctly_classified_mean = correctly_classified_df['mean']
@@ -171,13 +151,13 @@ diff_df = pd.DataFrame({'Mean Difference': mean_diff,
                         'Misclassified Mean': misclassified_mean, 
                         'Correctly Classified Mean': correctly_classified_mean})
 
-#plot a line grapH for the features to compare the means of misclassified and correctly classified samples for all models.
+# Plot a line graph for the features to compare the means of misclassified and correctly classified samples for the Logistic Regression model.
 plt.figure(figsize=(10, 6))
 plt.plot(misclassified_mean, label='Misclassified Mean', marker='o')
 plt.plot(correctly_classified_mean, label='Correctly Classified Mean', marker='o')
 plt.xlabel('Features')
 plt.ylabel('Mean')
-plt.title('Mean Comparison of Misclassified and Correctly Classified Samples')
+plt.title('Mean Comparison of Misclassified and Correctly Classified Samples (Logistic Regression)')
 plt.xticks(rotation=90)
 plt.legend()
 plt.show()
@@ -201,30 +181,6 @@ for model_name, model in models.items():
     print(f'LIME Explanation for {model_name}:')
     lime_explanation(model, X_train, X_test, 20)
     print('\n')
-
-# Function for LIME Explanation for a range of misclassified samples
-def lime_explanation_for_errors(model, X_train, X_test, y_test, model_name):
-    # Create the LIME explainer
-    explainer = lime.lime_tabular.LimeTabularExplainer(
-        training_data=np.array(X_train),
-        mode='classification',
-        class_names=['Negative', 'Positive'],
-        feature_names=X_train.columns,
-        discretize_continuous=True)
-    
-    # Identify misclassified samples
-    y_pred = model.predict(X_test)
-    misclassified_indices = np.where(y_pred != y_test)[0]
-    
-    explanations = {}
-    # Apply LIME to each misclassified sample and visualize
-    for i in misclassified_indices:
-        exp = explainer.explain_instance(X_test.iloc[i], model.predict_proba)
-        explanations[i] = exp
-        print(f'LIME Explanation for misclassified sample {i} using {model_name}:')
-        exp.show_in_notebook()  # This shows the LIME explanation for each misclassified instance
-    return explanations
-
 
 
 # Function for LIME Explanation for false positives and false negatives
@@ -262,8 +218,6 @@ for model_name, model in models.items():
         continue  # Skip the baseline model
     print(f'Error Analysis and LIME Explanations for {model_name}:')
     
-    # Perform LIME explanation on misclassified samples
-    lime_explanation_for_errors(model, X_train, X_test, y_test, model_name)
     # Perform LIME explanation on false positives and false negatives
     lime_explanation_for_fp_fn(model, X_train, X_test, y_test, model_name)
     

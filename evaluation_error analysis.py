@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import lime
 import lime.lime_tabular
 import os
+import shap
 
 #Load saved models
 models = {
@@ -63,15 +64,25 @@ print(accuracy_scores_df)
 
 #Plotting line graphs in a figure to compare the models based on mean cross-validation scores, mean f1 scores and mean accuracy scores
 fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(15, 10))
+# Plot the line graphs
 cv_scores_df.plot(kind='line', x='Model', y='Mean Cross-Validation Score', ax=axes[0], color='blue', legend=False)
 f1_scores_df.plot(kind='line', x='Model', y='Mean F1 Score', ax=axes[1], color='red', legend=False)
 accuracy_scores_df.plot(kind='line', x='Model', y='Mean Accuracy Score', ax=axes[2], color='green', legend=False)
+# Set titles
 axes[0].set_title('Mean Cross-Validation Scores')
 axes[1].set_title('Mean F1 Scores')
 axes[2].set_title('Mean Accuracy Scores')
+# Add values on the plots
+for ax, df, column in zip(axes, [cv_scores_df, f1_scores_df, accuracy_scores_df], 
+                          ['Mean Cross-Validation Score', 'Mean F1 Score', 'Mean Accuracy Score']):
+    for i, value in enumerate(df[column]):
+        ax.text(i, value, f'{value:.2f}', color='black', ha='center', va='bottom', fontsize=9)
+# Rotate x-tick labels
 for ax in axes:
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+# Set overall title
 fig.suptitle('Statistical metric comparison of all models')
+# Tight layout for better spacing
 plt.tight_layout()
 plt.show()
 
@@ -252,3 +263,26 @@ def save_lime_explanations(model, X_train, X_test, y_test, model_name, filepath)
 
 # Example: Save explanations for the 'Random Forest' model
 save_lime_explanations(models['Random Forest'], X_train, X_test, y_test, 'Random Forest', 'lime_explanations')
+
+
+
+# residual analysis for the logistic regression model
+model = models['Logistic Regression']
+y_pred = model.predict(X_test)
+residuals = y_test - y_pred
+
+# Plot the residuals
+plt.figure(figsize=(10, 6))
+plt.scatter(X_test.index, residuals, color='blue', alpha=0.5)
+plt.axhline(y=0, color='red', linestyle='--')
+plt.xlabel('Sample Index')
+plt.ylabel('Residual')
+plt.title('Residual Analysis for Logistic Regression Model')
+plt.show()
+
+# Partial dependence plot for the Logistic Regression model
+from sklearn.inspection import PartialDependenceDisplay
+fig, ax = plt.subplots(figsize=(10, 6))
+PartialDependenceDisplay.from_estimator(model, X_train, features= [3,4,5,7,9], ax=ax)
+ax.set_title('Partial Dependence Plot for Logistic Regression Model')
+plt.show()

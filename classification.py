@@ -15,6 +15,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
 import joblib
 from sklearn.model_selection import GridSearchCV
+import shap
 
 
 # Load data
@@ -106,6 +107,8 @@ def decision_tree(X_train, X_test, y_train, y_test):
 decision_tree(X_train, X_test, y_train, y_test)
 
 
+import shap
+
 def logistic_regression(X_train, X_test, y_train, y_test):
     """Train and evaluate a logistic regression model with grid search."""
     pipe = Pipeline([
@@ -144,6 +147,7 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     plot_feature_importances(importances, 'Logistic Regression Feature Importances', feature_names)
 
 logistic_regression(X_train, X_test, y_train, y_test)
+
 
 
 def rfe_logistic_regression(X_train, X_test, y_train, y_test):
